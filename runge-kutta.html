@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Orbital simulation with three.js</title>
+	<meta charset="utf-8">
+	<script type="text/javascript"
+	  src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+	</script>
+</head>
+<body>
+
+<h2>Gravitational acceleration</h2>
+\(x\) is a position vector here.
+
+$$
+f(x) = \frac{x}{|x|^3}
+$$
+
+<h2>Euler method</h2>
+
+$$
+v(t+h) = v(t) + h f(x) \\
+x(t+h) = x(t) + h v(t)
+$$
+
+<h2>Modified Euler method (Second-order Runge Kutta method)</h2>
+
+$$
+v_1 = v(t) + h f(x) \\
+x_1 = x(t) + h v_1(t) \\
+v_2 = v_1 + h f(x_1) \\
+x_2 = x_1 + h v_2 \\
+v(t+h) = \frac{v_1 + v_2}{2} \\
+x(t+h) = \frac{x_1 + x_2}{2}
+$$
+
+</body>
+</html>
