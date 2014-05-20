@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Orbital simulation with three.js</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				color: #f0f0f0;
+				font-family:Monospace;
+				font-size:13px;
+				text-align:center;
+
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				padding: 5px;
+			}
+
+			a {
+
+				color: #0080ff;
+			}
+
+		</style>
+	</head>
+	<body>
+
+		<div id="container"></div>
+		<div id="info">Orbital simulation demo - powered by <a href="http://threejs.org" target="_blank">three.js</a></div>
+
+		<script src="three.min.js"></script>
+		<script src="stats.min.js"></script>
+		<script src="OrbitControls.js"></script>
+
+		<script>
+
+			var container, stats;
+			var camera, scene, renderer;
+			var group;
+			var mouseX = 0, mouseY = 0;
+			var geometry;
+			var cameraControls;
+
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+
+			init();
+			animate();
+
+			function init() {
+
+				container = document.getElementById( 'container' );
+
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera.position.z = 500;
+
+				scene = new THREE.Scene();
+
+				group = new THREE.Object3D();
+				scene.add( group );
+
+				// earth
+
+				var loader = new THREE.TextureLoader();
+				loader.load( 'land_ocean_ice_cloud_2048.jpg', function ( texture ) {
+
+					var geometry = new THREE.SphereGeometry( 200, 20, 20 );
+
+					var material = new THREE.MeshBasicMaterial( { map: texture, overdraw: 0.5 } );
+					var mesh = new THREE.Mesh( geometry, material );
+					group.add( mesh );
+
+				} );
+
+				geometry = new THREE.Geometry();
+				for ( i = 0; i < 1000; i ++ ) {
+
+					var vertex = new THREE.Vector3();
+					vertex.x = Math.random() - 0.5;
+					vertex.y = Math.random() - 0.5;
+					vertex.z = Math.random() - 0.5;
+
+					if(vertex.lengthSq() < 1){
+						vertex.multiplyScalar(100);
+						vertex.x += 400;
+						vertex.velo = new THREE.Vector3(0,0,0.75);
+						geometry.vertices.push( vertex );
+					}
+
+				}
+
+				var material = new THREE.ParticleSystemMaterial( { size: 5 } );
+
+				var particles = new THREE.ParticleSystem( geometry, material );
+
+				scene.add( particles );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setClearColor( 0x000000 );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+				cameraControls.target.set( 0, 40, 0);
+				cameraControls.maxDistance = 4000;
+				cameraControls.minDistance = 10;
+				cameraControls.update();
+
+				container.appendChild( renderer.domElement );
+
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function onWindowResize() {
+
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				render();
+				stats.update();
+
+			}
+
+			function render() {
+				var time = Date.now() * 0.00005;
+
+				var deltaTime = 2;
+
+				// Second order Runge-Kutta method
+				for(i = 0; i < geometry.vertices.length; i++){
+					var vec = geometry.vertices[i];
+					var sl = vec.lengthSq();
+					if(sl !== 0){
+						var accel0 = vec.clone().negate().normalize().multiplyScalar(300. * deltaTime / sl);
+						var velo0 = vec.velo.clone().add(accel0);
+						var vec0 = vec.clone().add(velo0.clone().multiplyScalar(deltaTime));
+						var accel1 = vec0.clone().negate().normalize().multiplyScalar(300. * deltaTime / vec0.lengthSq());
+						var velo1 = velo0.clone().add(accel1);
+						var vec1 = vec0.clone().add(velo1.clone().multiplyScalar(deltaTime));
+						var velo2 = velo0.add(velo1).multiplyScalar(0.5);
+						var vec2 = vec0.add(vec1).multiplyScalar(0.5);
+
+						vec.velo.copy(velo2);
+						vec.copy(vec2);
+					}
+				}
+				geometry.verticesNeedUpdate = true;
+
+				cameraControls.update();
+
+				renderer.render( scene, camera );
+
+			}
+
+
+		</script>
+
+	</body>
+</html>
