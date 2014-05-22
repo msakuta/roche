@@ -89,7 +89,7 @@
 					if(vertex.lengthSq() < 1){
 						vertex.multiplyScalar(100);
 						vertex.x += 400;
-						vertex.velo = new THREE.Vector3(0,0,0.75);
+						vertex.velo = new THREE.Vector3(0,0, Math.sqrt(300. / 400.));
 						geometry.vertices.push( vertex );
 					}
 
@@ -147,23 +147,35 @@
 				var time = Date.now() * 0.00005;
 
 				var deltaTime = 2;
+				var euler = false;
+				var rg2 = true;
 
+				if(euler){
+					for(i = 0; i < geometry.vertices.length; i++){
+						var vec = geometry.vertices[i];
+						var sl = vec.lengthSq();
+						if(sl !== 0){
+							var accel = vec.clone().negate().normalize().multiplyScalar(300. * deltaTime / sl);
+							vec.velo.add(accel);
+							vec.add(vec.velo.clone().multiplyScalar(deltaTime));
+						}
+					}
+				}
 				// Second order Runge-Kutta method
-				for(i = 0; i < geometry.vertices.length; i++){
-					var vec = geometry.vertices[i];
-					var sl = vec.lengthSq();
-					if(sl !== 0){
-						var accel0 = vec.clone().negate().normalize().multiplyScalar(300. * deltaTime / sl);
-						var velo0 = vec.velo.clone().add(accel0);
-						var vec0 = vec.clone().add(velo0.clone().multiplyScalar(deltaTime));
-						var accel1 = vec0.clone().negate().normalize().multiplyScalar(300. * deltaTime / vec0.lengthSq());
-						var velo1 = velo0.clone().add(accel1);
-						var vec1 = vec0.clone().add(velo1.clone().multiplyScalar(deltaTime));
-						var velo2 = velo0.add(velo1).multiplyScalar(0.5);
-						var vec2 = vec0.add(vec1).multiplyScalar(0.5);
+				else if(rg2){
+					for(i = 0; i < geometry.vertices.length; i++){
+						var vec = geometry.vertices[i];
+						var sl = vec.lengthSq();
+						if(sl !== 0){
+							var accel = vec.clone().negate().normalize().multiplyScalar(300. * deltaTime / sl);
+							var dvelo = accel.clone().multiplyScalar(0.5);
+							var vec0 = vec.clone().add(vec.velo.clone().multiplyScalar(deltaTime / 2.));
+							var accel1 = vec0.clone().negate().normalize().multiplyScalar(300. * deltaTime / vec0.lengthSq());
+							var velo1 = vec.velo.clone().add(dvelo);
 
-						vec.velo.copy(velo2);
-						vec.copy(vec2);
+							vec.velo.add(accel1);
+							vec.add(velo1.multiplyScalar(deltaTime));
+						}
 					}
 				}
 				geometry.verticesNeedUpdate = true;
