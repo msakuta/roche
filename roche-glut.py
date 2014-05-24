@@ -99,6 +99,29 @@ dist = 1000
 phi = 30
 theta = 30
 
+def euler(deltaTime):
+	for p in points:
+		v = p.pos
+		norm = v.len()
+		accel = v * (-300. * deltaTime / (norm ** 3))
+		p.velo += accel
+		p.pos += p.velo * deltaTime
+
+def rg2(deltaTime):
+	for p in points:
+		v = p.pos
+		norm = v.len()
+		accel = v * (-300. * deltaTime / (norm ** 3))
+		dvelo = accel * 0.5
+		vec0 = v + p.velo * deltaTime / 2.
+		accel1 = vec0 * (-300. * deltaTime / (vec0.len() ** 3))
+		velo1 = p.velo + dvelo
+		p.velo += accel1
+		p.pos += velo1 * deltaTime
+
+
+method = rg2
+
 def display():
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -120,18 +143,13 @@ def display():
 	glEnd()
 
 	deltaTime = 2
+	method(deltaTime)
 
 	glColor3f (1.0, 1.0, 1.0)
 	glBegin(GL_POINTS)
 	for p in points:
 		v = p.pos
-		norm = v.len()
-		accel = -v * 300. * deltaTime / (norm ** 3);
-		p.velo += accel
-		p.pos += p.velo * deltaTime
-		v = p.pos
 		glVertex3d(v.x, v.y, v.z)
-#	print(points[0].pos, points[0].pos.len())
 	glEnd()
 
 	glPushAttrib(GL_LIGHTING_BIT)
