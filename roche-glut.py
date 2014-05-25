@@ -76,13 +76,22 @@ class masspoint(object):
 
 
 points = []
-for i in range(1000):
-	pos = vec3(random() - 0.5, random() - 0.5, random() - 0.5) * 100.
+for i in range(500):
+	pos = vec3(random() - 0.5, random() - 0.5, random() - 0.5) * 50.
 	vertex = masspoint(pos, vec3(0., 0., sqrt(300. / 400.)))
 
-	if vertex.pos.len() < 100:
+	if vertex.pos.len() < 25:
 		vertex.pos.x += 400;
 		points.append(vertex)
+
+for i in range(500):
+	pos = vec3(random() - 0.5, random() - 0.5, random() - 0.5) * 50.
+	vertex = masspoint(pos, vec3(0, 0, sqrt(300. / 600.)))
+
+	if vertex.pos.len() < 25:
+		vertex.pos.x += 600;
+		points.append(vertex)
+
 
 def init():
 	global quadratic
