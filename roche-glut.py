@@ -6,7 +6,7 @@ roche-glut.py
 A orbital simulator rendered with PyOpenGL.
 """
 
-import sys, numbers
+import sys, numbers, gc
 from math import *
 from random import *
 
@@ -32,6 +32,8 @@ class vec3(object):
 		return vec3(-self.x, -self.y, -self.z)
 	def __add__(self, o):
 		return vec3(self.x + o.x, self.y + o.y, self.z + o.z)
+	def __sub__(self, o):
+		return vec3(self.x - o.x, self.y - o.y, self.z - o.z)
 	def __mul__(self, s):
 		if not isinstance(s, numbers.Number):
 			return NotImplemented
@@ -73,10 +75,17 @@ class masspoint(object):
 	def __init__(self, pos = vec3(0,0,0), velo = vec3(0,0,0)):
 		self.pos = pos
 		self.velo = velo
+"""	def __cmp__(self, o):
+		if self.x < o.x:
+			return -1
+		elif o.x < self.x:
+			return 1
+		else:
+			return 0"""
 
 
 points = []
-for i in range(500):
+for i in range(50):
 	pos = vec3(random() - 0.5, random() - 0.5, random() - 0.5) * 50.
 	vertex = masspoint(pos, vec3(0., 0., sqrt(300. / 400.)))
 
@@ -84,7 +93,7 @@ for i in range(500):
 		vertex.pos.x += 400;
 		points.append(vertex)
 
-for i in range(500):
+for i in range(50):
 	pos = vec3(random() - 0.5, random() - 0.5, random() - 0.5) * 50.
 	vertex = masspoint(pos, vec3(0, 0, sqrt(300. / 600.)))
 
@@ -108,24 +117,31 @@ dist = 1000
 phi = 30
 theta = 30
 
+def getAccel(i,v):
+	accel = v * (-300. / (v.len() ** 3))
+	for p in points:
+		if i != p:
+			delta = v - p.pos
+			accel += delta * (-0.01 / (delta.len() ** 3))
+	return accel
+
 def euler(deltaTime):
 	for p in points:
 		v = p.pos
 		norm = v.len()
-		accel = v * (-300. * deltaTime / (norm ** 3))
-		p.velo += accel
+		p.velo += getAccel(p, v) * deltaTime
 		p.pos += p.velo * deltaTime
 
 def rg2(deltaTime):
 	for p in points:
 		v = p.pos
 		norm = v.len()
-		accel = v * (-300. * deltaTime / (norm ** 3))
-		dvelo = accel * 0.5
+		accel = getAccel(p, v)
+		dvelo = accel * deltaTime * 0.5
 		vec0 = v + p.velo * deltaTime / 2.
-		accel1 = vec0 * (-300. * deltaTime / (vec0.len() ** 3))
+		accel1 = getAccel(p, vec0)
 		velo1 = p.velo + dvelo
-		p.velo += accel1
+		p.velo += accel1 * deltaTime
 		p.pos += velo1 * deltaTime
 
 
@@ -174,6 +190,7 @@ def display():
 	glFlush()
 
 	glutPostRedisplay()
+	print gc.get_count(), gc.garbage
 
 mousestate = False
 mousepos = [0,0]
