@@ -11,13 +11,13 @@ from math import *
 from random import *
 
 try:
-  from OpenGL.GLUT import *
-  from OpenGL.GL import *
-  from OpenGL.GLU import *
+	from OpenGL.GLUT import *
+	from OpenGL.GL import *
+	from OpenGL.GLU import *
 except:
-  print '''
-ERROR: PyOpenGL not installed properly.  
-        '''
+	print '''
+ERROR: PyOpenGL not installed properly.
+'''
 
 class vec3(object):
 	""" Basic 3-D vector implementation """
