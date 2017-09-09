@@ -45,7 +45,17 @@
 			var group;
 			var mouseX = 0, mouseY = 0;
 			var geometry;
+
+			var obj = {
+				pos: new THREE.Vector3(400, 0, 0),
+				velo: new THREE.Vector3(0, 0, 1),
+				angle: 0.,
+				omg: -0.00 * Math.PI,
+				moi: 10.
+			}
 			var cameraControls;
+
+			var relpoints = []
 
 			var windowHalfX = window.innerWidth / 2;
 			var windowHalfY = window.innerHeight / 2;
@@ -57,7 +67,7 @@
 
 				container = document.getElementById( 'container' );
 
-				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 20000 );
 				camera.position.z = 500;
 
 				scene = new THREE.Scene();
@@ -79,21 +89,19 @@
 				} );
 
 				geometry = new THREE.Geometry();
-				for ( i = 0; i < 1000; i ++ ) {
-
-					var vertex = new THREE.Vector3();
-					vertex.x = Math.random() - 0.5;
-					vertex.y = Math.random() - 0.5;
-					vertex.z = Math.random() - 0.5;
-
-					if(vertex.lengthSq() < 1){
-						vertex.multiplyScalar(100);
-						vertex.x += 400;
-						vertex.velo = new THREE.Vector3(0,0, Math.sqrt(300. / 400.));
-						geometry.vertices.push( vertex );
-					}
-
+				var numpoints = 4;
+				relpoints.push(new THREE.Vector3(0,0,0))
+				for ( i = 1; i < numpoints; i ++ ) {
+					relpoints.push(new THREE.Vector3(10 * i,0,0))
+					relpoints.push(new THREE.Vector3(-10 * i,0,0))
+					relpoints.push(new THREE.Vector3(0,0,10 * i))
+					relpoints.push(new THREE.Vector3(0,0,-10 * i))
 				}
+				for(i = 0; i < relpoints.length; i++){
+					geometry.vertices.push( new THREE.Vector3 );
+				}
+				obj.velo = new THREE.Vector3(0,0,Math.sqrt(300. / 400.))
+				updatePoints()
 
 				var material = new THREE.ParticleSystemMaterial( { size: 5 } );
 
@@ -163,20 +171,30 @@
 				}
 				// Second order Runge-Kutta method
 				else if(rg2){
+					var forceaccum = new THREE.Vector3()
+					var torque = new THREE.Vector3()
 					for(i = 0; i < geometry.vertices.length; i++){
 						var vec = geometry.vertices[i];
 						var sl = vec.lengthSq();
 						if(sl !== 0){
 							var accel = vec.clone().negate().normalize().multiplyScalar(300. * deltaTime / sl);
-							var dvelo = accel.clone().multiplyScalar(0.5);
-							var vec0 = vec.clone().add(vec.velo.clone().multiplyScalar(deltaTime / 2.));
-							var accel1 = vec0.clone().negate().normalize().multiplyScalar(300. * deltaTime / vec0.lengthSq());
-							var velo1 = vec.velo.clone().add(dvelo);
-
-							vec.velo.add(accel1);
-							vec.add(velo1.multiplyScalar(deltaTime));
+							forceaccum.add(accel)
+							var torque1 = vec.clone().sub(obj.pos).cross(accel)
+							torque.add(torque1)
 						}
 					}
+					var dvelo = forceaccum.clone().multiplyScalar(0.5 / geometry.vertices.length / 300.);
+					var vec0 = obj.pos.clone().add(obj.velo.clone().multiplyScalar(deltaTime / 2.));
+					var accel1 = vec0.clone().negate().normalize().multiplyScalar(300. * deltaTime / vec0.lengthSq());
+					var velo1 = obj.velo.clone().add(dvelo);
+
+					obj.velo.add(accel1);
+					obj.pos.add(velo1.multiplyScalar(deltaTime));
+					obj.omg += torque.multiplyScalar(1. / obj.moi).y
+					obj.angle = obj.angle + obj.omg * deltaTime
+					obj.angle -= Math.floor(obj.angle / Math.PI) * Math.PI
+
+					updatePoints()
 				}
 				geometry.verticesNeedUpdate = true;
 
@@ -184,6 +202,17 @@
 
 				renderer.render( scene, camera );
 
+			}
+
+			// Update points
+			function updatePoints(){
+				for(var i = 0; i < geometry.vertices.length; i++){
+					var v = geometry.vertices[i]
+					var relpos = relpoints[i].clone()
+					relpos.applyAxisAngle(new THREE.Vector3(0,1,0), obj.angle)
+					relpos.add(obj.pos)
+					v.copy(relpos)
+				}
 			}
 
 
